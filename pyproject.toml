@@ -1,0 +1,67 @@
+[project]
+name = "smartsales"
+version = "0.1.0"
+description = "Project Smart Sales API"
+authors = [
+    {name = "Pedro Feitosa"}
+]
+license = {text = "MIT License"}
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "fastapi[standard] (>=0.115.12,<0.116.0)",
+    "psycopg[binary] (>=3.2.9,<4.0.0)",
+    "sqlalchemy (>=2.0.41,<3.0.0)",
+    "pydantic-settings (>=2.9.1,<3.0.0)",
+    "alembic (>=1.16.1,<2.0.0)",
+    "pyjwt (>=2.10.1,<3.0.0)",
+    "pwdlib[argon2] (>=0.2.1,<0.3.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "asyncpg (>=0.30.0,<0.31.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+taskipy = "^1.14.1"
+ruff = "^0.11.10"
+
+
+# Ruff - Configurações
+[tool.ruff]
+line-length = 79
+extend-exclude = ['migrations', '__init__.py']
+
+# Ruff - Lint
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+
+[tool.ruff.lint.pylint]
+max-positional-args = 7
+max-args = 10
+
+# Ruff - formatação e boas práticas
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+# Pytest - Executar testes
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = '-p no:warnings'
+
+# Taskipy - Executar tarefas
+[tool.taskipy.tasks]
+lint = 'ruff check'
+pre_format = 'ruff check --fix'
+format = 'ruff format'
+run = 'PYTHONPATH=. fastapi dev smartsales/core/app.py'
+pre_test = 'task lint'
+test = 'pytest -s -x --cov=smartsales -vv'
+post_test = 'coverage html'
