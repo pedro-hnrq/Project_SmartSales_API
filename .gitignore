@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+entrypoint.sh
+.vscode
+
 # Distribution / packaging
 .Python
 build/
@@ -172,3 +175,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+database.db

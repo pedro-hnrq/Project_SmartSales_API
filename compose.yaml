@@ -1,0 +1,36 @@
+
+services:
+  app:
+    container_name: api-smartsales
+    image: smartsales
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg://dev:dev_password@db:5432/db_smartsales
+    networks:
+      - smartsales
+
+  db:
+    container_name: postgres-smartsales
+    image: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_DB: db_smartsales
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    networks:
+      - smartsales
+
+volumes:
+  pgdata:
+
+networks:
+  smartsales:
