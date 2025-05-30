@@ -7,3 +7,4 @@ table_registry = registry()
 # Isso garante que table_registry.metadata conheça todas as suas tabelas.
 from smartsales.models import auth # noqa: E402
 from smartsales.models import clients  # noqa: E402
+from smartsales.models import products  # noqa: E402
