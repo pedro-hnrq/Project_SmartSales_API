@@ -43,7 +43,7 @@ preview = true
 select = ['I', 'F', 'E', 'W', 'PL', 'PT']
 
 [tool.ruff.lint.pylint]
-max-positional-args = 7
+max-positional-args = 8
 max-args = 10
 
 # Ruff - formatação e boas práticas

@@ -26,20 +26,20 @@ router.post(
     '/',
     response_model=ClientResponse,
     status_code=status.HTTP_201_CREATED,
-    description='Create a new client',
+    description='Create new client',
 )(create_client_controller)
 router.get(
     '/{client_id}',
     response_model=ClientResponse,
-    description='Retrieve a client',
+    description='Retrieve client',
 )(retrieve_client)
 router.put(
     '/{client_id}',
     response_model=ClientResponse,
-    description='Update a client',
+    description='Update client',
 )(update_client_controller)
 router.delete(
     '/{client_id}',
     status_code=status.HTTP_204_NO_CONTENT,
-    description='Delete a client',
+    description='Delete client',
 )(delete_client_controller)
