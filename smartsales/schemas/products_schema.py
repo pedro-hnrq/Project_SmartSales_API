@@ -1,6 +1,7 @@
-from datetime import date, datetime
+from datetime import date
 from typing import List, Optional
 
+from fastapi import Form
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -17,16 +18,57 @@ class ProductCreate(ProductBase):
     expiry_date: Optional[date] = None
     images: Optional[List[str]] = None
 
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        sale_price: float = Form(..., gt=0),
+        section: str = Form(...),
+        description: Optional[str] = Form(None),
+        barcode: Optional[str] = Form(None),
+        stock: Optional[int] = Form(None),
+        expiry_date: Optional[date] = Form(None),
+    ) -> 'ProductCreate':
+        return cls(
+            title=title,
+            sale_price=sale_price,
+            section=section,
+            description=description,
+            barcode=barcode,
+            stock=stock,
+            expiry_date=expiry_date,
+            images=None,
+        )
 
-class ProductUpdate(BaseModel):
-    title: Optional[str]
-    sale_price: Optional[float] = Field(None, gt=0)
-    section: Optional[str]
-    description: Optional[str]
-    barcode: Optional[str]
+
+class ProductUpdate(ProductBase):
+    description: Optional[str] = None
+    barcode: Optional[str] = None
     stock: Optional[int] = Field(None, ge=0)
-    expiry_date: Optional[date]
-    images: Optional[List[str]]
+    expiry_date: Optional[date] = None
+    images: Optional[List[str]] = None
+
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        sale_price: float = Form(..., gt=0),
+        section: str = Form(...),
+        description: Optional[str] = Form(None),
+        barcode: Optional[str] = Form(None),
+        stock: Optional[str] = Form(None),
+        expiry_date: Optional[date] = Form(None),
+    ) -> 'ProductUpdate':
+        return cls(
+            title=title,
+            sale_price=sale_price,
+            section=section,
+            description=description,
+            barcode=barcode,
+            stock=int(stock) if stock and stock.isdigit() else None,
+            expiry_date=expiry_date,
+            images=None,
+        )
 
 
 class OwnerSchema(BaseModel):
@@ -46,8 +88,6 @@ class ProductResponse(ProductBase):
     expiry_date: Optional[date]
     images: Optional[List[str]]
     owner: OwnerSchema
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True

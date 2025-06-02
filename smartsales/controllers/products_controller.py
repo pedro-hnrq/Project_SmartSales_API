@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import List, Optional
 
-from fastapi import Depends
+from fastapi import Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
 from smartsales.core.database import get_session
@@ -46,20 +46,44 @@ async def retrieve_product(
 
 
 async def create_product(
-    body: ProductCreate,
+    body: ProductCreate = Depends(ProductCreate.as_form),
+    images: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ) -> ProductResponse:
+    # 1) Salvar os arquivos físicos (se houver)
+    image_paths: List[str] = []
+    if images:
+        for img in images:
+            file_location = f'smartsales/static/uploads/{img.filename}'
+            with open(file_location, 'wb+') as f:
+                f.write(img.file.read())
+            image_paths.append(file_location)
+
+    # 2) “injetar” os paths no objeto ProductCreate
+    body.images = image_paths
+
+    # 3) Chamar o service passando o ProductCreate (que já tem body.images)
     p = create_product_service(db, body, current_user)
     return ProductResponse.from_orm(p)
 
 
 async def update_product(
     product_id: int,
-    body: ProductUpdate,
+    body: ProductUpdate = Depends(ProductUpdate.as_form),
+    images: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ) -> ProductResponse:
+    if images:
+        image_paths: List[str] = []
+        for img in images:
+            file_location = f'smartsales/static/uploads/{img.filename}'
+            with open(file_location, 'wb+') as f:
+                f.write(img.file.read())
+            image_paths.append(file_location)
+        body.images = image_paths  # sobrescreve as imagens
+
     p = update_product_service(db, product_id, body, current_user)
     return ProductResponse.from_orm(p)
 

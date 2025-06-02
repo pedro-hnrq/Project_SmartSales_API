@@ -6,6 +6,7 @@ from fastapi.openapi.models import SecuritySchemeType
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
+from fastapi.staticfiles import StaticFiles
 
 from smartsales.routers.auth_router import router as auth_router
 from smartsales.routers.clients_router import router as clients_router
@@ -19,6 +20,8 @@ app = FastAPI(
     description='API',
     version='1.0.0',
 )
+
+app.mount('/static', StaticFiles(directory='smartsales/static'), name='static')
 
 # inclui seus routers normalmente
 app.include_router(auth_router, prefix='/api')
