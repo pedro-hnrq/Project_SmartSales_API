@@ -26,6 +26,11 @@ Após clonar o repositório acesse o diretório:
 cd Project_SmartSales_API
 ``` 
 
+Modifique o arquivo `.env-exemple` para `.env`.
+```bash
+mv env-exemple .env
+```
+
 Uma vez criado seu ambiente virtual, você deve ativá-lo.
 
 ```bash
@@ -103,7 +108,19 @@ pytest
 |  POST | `/api/token/register/`   | Registar na plataforma   |  NÃO |
 | POST     | `/api/token/refresh-token/`   | Obter access_token |  NÃO |
 
- Existem duas tipos de Role: _administrador_ e _usuário regular_, denominado de admin e user. Dessa forma, o _administrador_, terá acesso a todos os endpoints e, já _usuário regular_ terá acesso somente o endpoint que relacionado ao seu usuário.
+⚠️ Níveis de Acesso (Roles)
+
+Existem dois níveis de acesso principais para os endpoints:
+
+- `admin` (Administrador): Usuários com este perfil têm acesso total e irrestrito a todos os endpoints de produtos. Eles podem listar, visualizar, criar, atualizar e deletar qualquer produto no sistema.
+- `user` (Usuário Regular): Usuários com este perfil podem:
+    - Listar (GET /api/products/) e visualizar (GET /api/products/{id}/) todos os produtos.
+    - Criar (POST /api/products/) novos produtos.
+    - Atualizar (PUT /api/products/{id}/) e deletar (DELETE /api/products/{id}/) apenas os produtos que eles mesmos criaram. Tentativas de modificar ou deletar produtos de outros usuários resultarão em um erro de acesso não autorizado (geralmente um status 403 Forbidden ou 404 Not Found dependendo da implementação).
+
+ _Lembre-se_:
+
+- O token JWT tem validade de um dia e duração de 30 minutos. Após esse período, você precisará renová-lo usando o endpoint `POST /api/token/refresh-token/`.
 
  1. Criar um admin/user: 
 
@@ -202,6 +219,211 @@ pytest
 
     Endpoint: `POST /api/clients/`
 
+2. Listar clientes:
+
+    Endpoint `GET /api/clients/`
+
+3. Obter cliente por ID:
+
+    Endpoint ``GET /api/clients/:id/`
+
+4. Atualizar um cliente:
+
+    Endpoint: `PUT /api/clients/:id/`
+
+5. Deletar um cliente:
+
+    Endpoint: `DELETE /api/clients/:id/`
+
+
+🎱 **Produtos**
+
+ | **Método**   | **Endpoint** | **Descrição** |  **Autenticação** |
+|------------|-----------|------------------|------------------|
+| GET       |  `/api/products/` | Listar somente a produtos    |  SIM  |
+|  GET | `/api/products/:id/`   | Obter com ID a produtos   |  SIM |
+| POST     | `/api/products/`   | Criar novo produtos |  SIM |
+|  PUT | `/api/products/:id/`   | Atualizar registro de produtos   | SIM  |
+| DELETE     | `/api/products/:id/`   | Deleta registro do produtos | SIM  |
+
+Necessita está autenticado para acessar os endpoints. Pois o retorno da resposta status (401 Unauthorized).
+```
+{
+    "detail": "Could not validate credentials"
+}
+```
+
+
+1. Criar um produtos:
+
+    Endpoint: `POST /api/products/` (Body: form-data)
+
+    | **Key**   |  | **Value** |  
+    |------------|-----------|------------------|
+    | title       |  Text | TV LG 55 4K |
+    |  sale_price | Text   | 6799.89 |
+    | section     | Text   | Móveis |
+    |  description | Text   | Mega Sofa Cama   |
+    | barcode     | Text   | 456489419 |
+    | stock       |  Text | 17 |
+    |  expiry_date | Text   | 2025-06-25 |
+    | images     | File   | TV-LG-55-4K.jpg, TV-LG-55-4K_.jpg |
+
+    Sucesso da resposta (201 Created)
+    ```
+    {
+        "title": "TV LG 55 4K",
+        "sale_price": 6799.89,  
+        "section": "Móveis",
+        "id": 5,
+        "description": "Mega Sofa Cama",
+        "barcode": "456489419",
+        "stock": 17,
+        "expiry_date": "2025-06-25",
+        "images": [
+            "static/uploads/TV-LG-55-4K.jpg",
+            "static/uploads/TV-LG-55-4K_.jpg"
+        ],
+        "owner": {
+            "name": "Dev Admin",
+            "email": "dev@mail.com",
+            "role": "admin"
+        }
+    }
+    ```     
+
+2. Listar produtos:
+
+    Endpoint `GET /api/products/`
+    
+    Params `?skip=0&limit=10&section=Eletrodoméstico&price_min=100&price_max=15000&available=true`
+
+    | **Key**   | **Value** | **Discription** |  
+    |------------|-----------|------------------|
+    | skip     |  0 | Ignorar número de registros |
+    |  limit | 10   | Numero máximo de limite |
+    | section     | Eletrodoméstico   | Eletrodoméstico, Eletrônica, Móveis |
+    |  price_min | 500   | Valor Mínimo   |
+    | price_max     | 30000   | Valor Máximo |
+    | stavailable       |  true | Stock/Estoque = 0 (false) e Stock/Estoque > 0 (true) |
+   
+    Resposta (200 OK)
+    ```
+    {
+        "total": 2,
+        "items": [
+            {
+            "title": "TV LG 55 4K",
+            "sale_price": 2899,
+            "section": "Eletrodoméstico",
+            "id": 5,
+            "description": "Smart TV LG NanoCell NANO80 4K de 55 polegadas (55NANO80) oferece uma experiência visual imersiva com a tecnologia NanoCell, que aprimora as cores e o contraste para uma imagem mais rica e detalhada.",
+            "barcode": "456489419",
+            "stock": 17,
+            "expiry_date": "2025-06-15",
+            "images": [
+                "static/uploads/TV-LG-55-4K_2.jpg"
+            ],
+            "owner": {
+                "name": "Dev Admin",
+                "email": "dev@mail.com",
+                "role": "admin"
+                }
+            },
+            {
+            "title": "MacBook Air 4",
+            "sale_price": 22469.55,
+            "section": "Eletrodoméstico",
+            "id": 6,
+            "description": "Apple Macbook Air 15\", M4, com CPU de 10 núcleos, GPU de 10 núcleos, 24GB RAM, 512GB SSD - Prata",
+            "barcode": "756489489",
+            "stock": 0,
+            "expiry_date": "2025-06-02",
+            "images": [
+                "static/uploads/macbook-air-m4.png"
+            ],
+            "owner": {
+                "name": "Dev User",
+                "email": "devu@mail.com",
+                "role": "user"
+                }
+            }
+        ]
+    }    
+        
+    ```
+
+3. Obter produtos por ID:
+
+    Endpoint ``GET /api/products/:product_id/`, product_id = 5
+
+    Resposta (200 OK)
+
+    ```
+    {
+        "title": "TV LG 55 4K",
+        "sale_price": 2899.0,
+        "section": "Eletrodoméstico",
+        "id": 5,
+        "description": "Smart TV LG NanoCell NANO80 4K de 55 polegadas (55NANO80) oferece uma experiência visual imersiva com a tecnologia NanoCell, que aprimora as cores e o contraste para uma imagem mais rica e detalhada.",
+        "barcode": "456489419",
+        "stock": 17,
+        "expiry_date": "2025-06-15",
+        "images": [
+            "static/uploads/TV-LG-55-4K_2.jpg"
+        ],
+        "owner": {
+            "name": "Dev Admin",
+            "email": "dev@mail.com",
+            "role": "admin"
+        }
+    }
+    
+    ```
+
+4. Atualizar um produtos:
+
+    Endpoint: `PUT /api/products/:product_id/`
+
+    | **Key**   |  | **Value** |  
+    |------------|-----------|------------------|
+    | title       |  Text | TV LG 55 4K |
+    |  sale_price | Text   | 6799.89 |
+    | section     | Text   | Eletrodoméstico |
+    |  description | Text   | Smart TV LG NanoCell NANO80 4K de 55 polegadas |
+    | barcode     | Text   | 456489419 |
+    | stock       |  Text | 17 |
+    |  expiry_date | Text   | 2025-06-25 |
+    | images     | File   | TV-LG-55-4K_2.jpg |
+
+
+    Sucesso da resposta (200 Ok)
+    ```
+    {
+    "title": "TV LG 55 4K",
+    "sale_price": 2899,
+    "section": "Eletrodoméstico",
+    "id": 5,
+    "description": "Smart TV LG NanoCell NANO80 4K de 55 polegadas",
+    "barcode": "456489419",
+    "stock": 17,
+    "expiry_date": "2025-06-15",
+    "images": [
+        "static/uploads/TV-LG-55-4K_2.jpg"
+    ],
+    "owner": {
+        "name": "Dev Admin",
+        "email": "dev@mail.com",
+        "role": "admin"
+        }
+    }
+    ```  
+
+5. Deletar um produtos:
+
+    Endpoint: `DELETE /api/products/:product_id/`, product_id = 7
+
+    A resposta (204 No Content)
 
 #### 🦫 Dbeaver | 🐘 PostgreSQL
 
