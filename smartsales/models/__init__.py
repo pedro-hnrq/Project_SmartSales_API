@@ -8,3 +8,4 @@ table_registry = registry()
 from smartsales.models import auth # noqa: E402
 from smartsales.models import clients  # noqa: E402
 from smartsales.models import products  # noqa: E402
+from smartsales.models import orders  # noqa: E402

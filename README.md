@@ -215,6 +215,13 @@ Existem dois níveis de acesso principais para os endpoints:
 |  PUT | `/api/clients/:id/`   | Atualizar registro de clientes   | SIM  |
 | DELETE     | `/api/clients/:id/`   | Deleta registro do clientes | SIM  |
 
+Necessita está autenticado para acessar os endpoints. Pois o retorno da resposta status (401 Unauthorized).
+```
+{
+    "detail": "Could not validate credentials"
+}
+```
+
 1. Criar um cliente:
 
     Endpoint: `POST /api/clients/`
@@ -305,7 +312,7 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
     | section     | Eletrodoméstico   | Eletrodoméstico, Eletrônica, Móveis |
     |  price_min | 500   | Valor Mínimo   |
     | price_max     | 30000   | Valor Máximo |
-    | stavailable       |  true | Stock/Estoque = 0 (false) e Stock/Estoque > 0 (true) |
+    | available       |  true | Stock/Estoque = 0 (false) e Stock/Estoque > 0 (true) |
    
     Resposta (200 OK)
     ```
@@ -383,7 +390,7 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
 
 4. Atualizar um produtos:
 
-    Endpoint: `PUT /api/products/:product_id/`
+    Endpoint: `PUT /api/products/:product_id/` (Body: form-data)
 
     | **Key**   |  | **Value** |  
     |------------|-----------|------------------|
@@ -425,6 +432,46 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
 
     A resposta (204 No Content)
 
+
+⛳ **Pedidos**
+
+ | **Método**   | **Endpoint** | **Descrição** |  **Autenticação** |
+|------------|-----------|------------------|------------------|
+| GET       |  `/api/orders/` | Listar somente a pedidos    |  SIM  |
+|  GET | `/api/orders/:id/`   | Obter com ID a pedidos   |  SIM |
+| POST     | `/api/orders/`   | Criar novo pedidos |  SIM |
+|  PUT | `/api/orders/:id/`   | Atualizar registro de pedidos   | SIM  |
+| DELETE     | `/api/orders/:id/`   | Deleta registro do pedidos | SIM  |
+
+
+Necessita está autenticado para acessar os endpoints. Pois o retorno da resposta status (401 Unauthorized).
+```
+{
+    "detail": "Could not validate credentials"
+}
+```
+
+1. Criar um pedido:
+
+    Endpoint: `POST /api/orders/`
+
+2. Listar pedidos:
+
+    Endpoint `GET /api/orders/`
+
+3. Obter pedido por ID:
+
+    Endpoint `GET /api/orders/:id/`
+
+4. Atualizar um pedido:
+
+    Endpoint: `PUT /api/orders/:id/`
+
+5. Deletar um pedido:
+
+    Endpoint: `DELETE /api/orders/:id/`
+
+
 #### 🦫 Dbeaver | 🐘 PostgreSQL
 
 Para visualizar as as tabelas no banco de dados no `PostgreSQL`, poderá usar a ferramenta `DBeaver Communty`, com as seguintes configurações: 
@@ -455,13 +502,7 @@ Para facilitar a execução e o desenvolvimento da API REST, utilizamos o Docker
     Após iniciar os contêineres, execute o seguinte comando para aplicar as migrações do banco de dados PostgreSQL:
 
     ```bash
-    docker compose exec app python manage.py migrate
-    ```
-4. Criando um Superusuário:
-    
-    Para acessar o painel administrativo do Django, crie um superusuário com o seguinte comando:
-    ```bash
-    docker compose exec app python manage.py createsuperuser
+    docker compose exec app proetry run alembic upgrade head
     ```
 
 5. Iniciando o Servidor de Desenvolvimento:
@@ -469,19 +510,14 @@ Para facilitar a execução e o desenvolvimento da API REST, utilizamos o Docker
     Inicie o servidor de desenvolvimento do Django com o seguinte comando:
 
     ```bash
-    docker compose exec app python manage.py runserver 0.0.0.0:8000
+    docker compose exec app poetry run 0.0.0.0:8000
     ```
 
 6. Outros Comandos Úteis:
     
     Para rodar o Script:
     ```bash
-    docker compose exec app python manage.py populate_db
-    ```
-
-    Para iniciar o Celery:
-    ```bash
-    docker compose exec app celery -A core worker -l INFO
+    docker compose exec app
     ```
 
     Para iniciar novamente:
