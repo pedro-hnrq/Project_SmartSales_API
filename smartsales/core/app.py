@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from smartsales.routers.auth_router import router as auth_router
 from smartsales.routers.clients_router import router as clients_router
+from smartsales.routers.orders_router import router as orders_router
 from smartsales.routers.products_router import router as products_router
 
 # define o scheme de Bearer (JWT) para o OpenAPI
@@ -27,6 +28,7 @@ app.mount('/static', StaticFiles(directory='smartsales/static'), name='static')
 app.include_router(auth_router, prefix='/api')
 app.include_router(clients_router, prefix='/api')
 app.include_router(products_router, prefix='/api')
+app.include_router(orders_router, prefix='/api')
 
 
 @app.get('/', status_code=HTTPStatus.OK)
