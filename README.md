@@ -14,6 +14,7 @@
 
 ### 📷 Prévia
 
+![smartsales](https://github.com/user-attachments/assets/735e6ee8-223c-4d84-81c3-0ddf240bbab4)
 
 
 #### 🎯 Objetivo
