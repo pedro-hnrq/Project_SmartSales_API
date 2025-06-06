@@ -1,5 +1,27 @@
 # Project_SmartSales_API
 
+<p align="center">
+<a href="#-prévia">Prévia</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-objetivo">Objetivo</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-pré-requisitos">Instalação</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-tasks">Comados no Terminal</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#️-apis">API Rest</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-dbeaver---postgresql">Banco de Dados</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-docker">Docker</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+    <a href="#-teste-unitário">Testes Unitários</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#licença">Licença</a>
+</p>
+
+### 📷 Prévia
+
+
+
+#### 🎯 Objetivo
+
+Este projeto tem como objetivo demonstrar a construção de uma API REST robusta utilizando autenticação JWT (JSON Web Token), com controle de acesso baseado em papéis (roles), sendo eles `admin` (administrador) e `user` (usuário regular). A API é estruturada para gerenciar entidades fundamentais como `clients` (clientes), `products` (produtos) e `orders` (pedidos), garantindo segurança, organização e escalabilidade no acesso e manipulação dos dados.
+
+Além das funcionalidades tradicionais de CRUD, o projeto implementa uma funcionalidade de _pesquisa inteligente com LLM_ (Large Language Model – Modelo de Linguagem de Grande Escala), integrando o modelo _LLaMA 3.3 70B_ por meio da plataforma _Groq_. Essa integração permite que os usuários façam perguntas em linguagem natural sobre regras de negócio e recebam respostas contextualizadas e precisas, simulando uma interação com um assistente virtual corporativo.
+
 #### 💻 Pré-requisitos
 
 Antes de começar, verifique se você atendeu aos seguintes requisitos:
@@ -11,7 +33,6 @@ Antes de começar, verifique se você atendeu aos seguintes requisitos:
 - PostgreSQL
 - Docker
 - Docker Compose
-- Postman (opcional)
 
 
 #### 🛠️ Instalação
@@ -30,6 +51,10 @@ Modifique o arquivo `.env-exemple` para `.env`.
 ```bash
 mv env-exemple .env
 ```
+
+Na parte para colocar o key no no .env de `GROQ_API_KEY` poderá acessar o site <a href="https://console.groq.com/login">Groq</a>. Criando a conta, depois gerando a chave.
+
+
 
 Uma vez criado seu ambiente virtual, você deve ativá-lo.
 
@@ -67,7 +92,9 @@ ruff linter
 ruff format
 ```
 
-Tasks - Atalho que poderá utilizar no terminal.
+#### 🪢 Tasks
+
+Atalho que poderá utilizar no terminal.
 
  | **Descrição**   | **Comando** | 
 |------------|-----------|
@@ -79,24 +106,11 @@ Tasks - Atalho que poderá utilizar no terminal.
 | Teste     | ```task test ```  | 
 | Coverage     | ```task post_test ```  | 
 
-🧪 Teste Unitário 
-
-- Pytest
-```python
-pytest
-```
-- Coverage
- 1. Executar o comando. 
-    ```python
-    covarage 
-    ```
- 2. Executar o comando para gerar o arquivo de cobertura.
-    ```python
-    covarage html
-    ```
 
 #### 🗺️ APIs
 
+ - Swagger: `localhost:8000/doc/`
+ - Redoc: `localhost:8000/redoc`
 
 🔐 **Autenticação** - JWT
  
@@ -108,7 +122,7 @@ pytest
 |  POST | `/api/token/register/`   | Registar na plataforma   |  NÃO |
 | POST     | `/api/token/refresh-token/`   | Obter access_token |  NÃO |
 
-⚠️ Níveis de Acesso (Roles)
+⚠️ Níveis de Acesso (Roles) 
 
 Existem dois níveis de acesso principais para os endpoints:
 
@@ -204,6 +218,44 @@ Existem dois níveis de acesso principais para os endpoints:
     }
     ```
 
+🔍 **Pesquisa (LLM + Groq)**
+
+Utilizando o LLM - Groq (Llama 3.3 70B Versatile) para responder perguntas sobre as regras de negócio do SmartSales e salvar cada consulta no banco de dados.
+
+ | **Método**   | **Endpoint** | **Descrição** |  **Autenticação** |
+|------------|-----------|------------------|------------------|
+| GET       |  `/api/search/` | Obter informação SmartSales    |  SIM  |
+
+
+Necessita está autenticado para acessar os endpoints. Pois o retorno da resposta status (401 Unauthorized).
+```
+{
+    "detail": "Could not validate credentials"
+}
+```
+
+1. Obter informações na pesquisa:
+
+    Endpoint `GET /api/search/`
+    
+    Params `?q="Quais campos são obrigatórios ao criar um pedido?"`
+
+    | **Key**   | **Value** | **Discription** |  
+    |------------|-----------|------------------|
+    | q     |  Quais campos são obrigatórios ao criar um pedido? | Pergunta que deseja obter |
+    
+   
+    Resposta (200 OK)
+    ````
+    {
+    "id": 1,
+    "query": "Quais campos são obrigatórios ao criar um pedido?",
+    "response": "Ao criar um pedido, os campos obrigatórios são:\n\n1. client_id (id do cliente que fez o pedido)\n2. total_value (valor total do pedido)\n3. status (status do pedido, que inicialmente deve ser \"pending\")\n4. owner_id (id do usuário que criou o pedido)\n\nAlém disso, é necessário criar uma lista de OrderItem (itens do pedido) com os seguintes campos obrigatórios para cada item:\n1. product_id (id do produto)\n2. quantity (quantidade do produto)\n3. unit_price (preço unitário do produto)\n4. total_price (preço total do item)\n\nEsses campos são necessários para criar um pedido válido no sistema SmartSales.",
+    "owner_id": 42,
+    "created_at": "2025-06-06T20:15:00.123456"
+    }
+    
+    ```
 
 🛗 **Clientes**
 
@@ -225,23 +277,115 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
 1. Criar um cliente:
 
     Endpoint: `POST /api/clients/`
+    ```
+    {
+        "name": "Felipe Eduardo",
+        "email": "feed@example.com",
+        "cpf": "14391150018"
+    }
+    ```
+    Sucesso da resposta (201 Created)
+    ```
+    {
+        "name": "Felipe Eduardo",
+        "email": "feed@example.com",
+        "cpf": "14391150018",
+        "id": 3,
+        "owner": {
+            "email": "devu@mail.com",
+            "role": "user"
+        }
+    }
+    ``` 
+
 
 2. Listar clientes:
 
     Endpoint `GET /api/clients/`
 
-3. Obter cliente por ID:
+    Params `?skip=0&limit=10&name=Felipe&email=feed%40example.com`
 
-    Endpoint ``GET /api/clients/:id/`
+    | **Key**   | **Value** | **Discription** |  
+    |------------|-----------|------------------|
+    | skip     |  0 | Ignorar número de registros |
+    |  limit | 10   | Numero máximo de limite |
+    | name     | Felipe   | nome do cliente |
+    |  email | feed@example.com   | client@mail.com   |
+    
+   
+    Sucesso da resposta (200 OK)
+    ```
+    {
+        "total": 1,
+        "items": [
+            {
+            "name": "Felipe Eduardo",
+            "email": "feed@example.com",
+            "cpf": "14391150018",
+            "id": 3,
+            "owner": {
+                "email": "devu@mail.com",
+                "role": "user"
+            }
+            }
+        ]
+    }    
+    ```
+
+
+3. Obter cliente por ID:
+    
+    Se autenticado como role=user e colocar um ID de cliente que não seja o do próprio usuário, retorná na requisição 403 - Forbidden.
+
+    ```
+    {
+        "detail": "Not authorized to access this client"
+    }
+    ```
+
+    Endpoint `GET /api/clients/:id/`, ID = 2
+    
+    Sucesso da Resposta (200 OK)
+    ```
+    {
+        "name": "Lucas ScalWork",
+        "email": "skork@example.com",
+        "cpf": "12513945077",
+        "id": 2,
+        "owner": {
+            "email": "devu@mail.com",
+            "role": "user"
+        }
+    }
+    ```
+
+
 
 4. Atualizar um cliente:
 
-    Endpoint: `PUT /api/clients/:id/`
+    Endpoint: `PUT /api/clients/:id/`, ID = 2
+
+    Sucesso da resposta (200 OK)
+    ```
+    {
+        "name": "Lucas Parker",
+        "email": "lucas@mail.com",
+        "cpf": "12513945077",
+        "id": 2,
+        "owner": {
+            "email": "devu@mail.com",
+            "role": "user"
+        }
+    }
+    
+    ```
 
 5. Deletar um cliente:
 
-    Endpoint: `DELETE /api/clients/:id/`
+    Endpoint: `DELETE /api/clients/:id/`, ID = 3
 
+    Sucesso da resposta (204 No Content)
+    
 
 🎱 **Produtos**
 
@@ -454,22 +598,164 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
 1. Criar um pedido:
 
     Endpoint: `POST /api/orders/`
+    ```
+    {
+    "client_id": 2,
+    "status": "shipped",
+    "items": [
+            {
+                "product_id": 1,
+                "quantity": 1
+            }
+        ]
+    }
+    ```
+    Sucesso da resposta (200 Ok)
+    ```
+    {
+        "id": 4,
+        "client_id": 2,
+        "status": "shipped",
+        "total_value": "2890.00",
+        "items": [
+            {
+            "id": 5,
+            "product_id": 1,
+            "quantity": 1,
+            "unit_price": "2890.00",
+            "total_price": "2890.00"
+            }
+        ],
+        "owner": {
+            "name": "Dev User",
+            "email": "devu@mail.com",
+            "role": "user"
+        },
+        "created_at": "2025-06-06T18:48:47.720315",
+        "updated_at": "2025-06-06T18:48:47.720315"
+    }
+    ```
 
 2. Listar pedidos:
 
     Endpoint `GET /api/orders/`
 
+    Params `?limit=10&client_id=2&id_order=%204&status=shipped&since=2025-06-05&until=2025-06-07&section=Eletr%C3%B4nica`
+
+    | **Key**   | **Value** | **Discription** |  
+    |------------|-----------|------------------|
+    |  limit | 10   | Numero máximo de limite |    
+    |  client_id | 2   | ID do Cliente  |
+    | id_order     | 4   | ID do Pedido |
+    | status       |  shipped | pending, confirmed, shipped, delivered, canceled |
+    |  since | 2025-06-05   | Data Inicial  |
+    | until     | 2025-06-07   | Data Final |
+    | section     | Eletrônica   | Eletrodoméstico, Eletrônica, Móveis |
+   
+    Resposta (200 OK)
+    ```
+    {
+        "total": 1,
+        "items": [
+            {
+            "id": 4,
+            "client_id": 2,
+            "status": "shipped",
+            "total_value": "2890.00",
+            "created_at": "2025-06-06T18:48:47.720315"
+            }
+        ]
+    }
+    ```
+
 3. Obter pedido por ID:
 
-    Endpoint `GET /api/orders/:id/`
+    Se o pedido não existe, resposta da requisição 403 - Not Found.
+
+    ```
+    {
+        "detail": "Pedido não encontrado."
+    }
+    ```
+
+    Endpoint `GET /api/orders/:id/`, order_id = 4
+
+    Resposta (200 OK)
+    ```
+    {
+        "id": 4,
+        "client_id": 2,
+        "status": "shipped",
+        "total_value": "2890.00",
+        "items": [
+            {
+            "id": 5,
+            "product_id": 1,
+            "quantity": 1,
+            "unit_price": "2890.00",
+            "total_price": "2890.00"
+            }
+        ],
+        "owner": {
+            "name": "Dev User",
+            "email": "devu@mail.com",
+            "role": "user"
+        },
+        "created_at": "2025-06-06T18:48:47.720315",
+        "updated_at": "2025-06-06T18:48:47.720315"
+    }
+    
+    ```
+
+
 
 4. Atualizar um pedido:
 
-    Endpoint: `PUT /api/orders/:id/`
+    Endpoint: `PUT /api/orders/:id/`, id = 4
+    ```
+    {
+        "client_id": 2,
+        "status": "canceled",
+        "items": [
+            {
+            "product_id": 1,
+            "quantity": 1
+            }
+        ]
+    }
+    ```
+    Resposta (200 OK)
+
+    ```
+    {
+        "id": 4,
+        "client_id": 2,
+        "status": "canceled",
+        "total_value": "2890.00",
+        "items": [
+            {
+            "id": 6,
+            "product_id": 1,
+            "quantity": 1,
+            "unit_price": "2890.00",
+            "total_price": "2890.00"
+            }
+        ],
+        "owner": {
+            "name": "Dev User",
+            "email": "devu@mail.com",
+            "role": "user"
+        },
+        "created_at": "2025-06-06T18:48:47.720315",
+        "updated_at": "2025-06-06T19:09:15.839439"
+    }    
+    ```
 
 5. Deletar um pedido:
 
-    Endpoint: `DELETE /api/orders/:id/`
+    Endpoint: `DELETE /api/orders/:id/`, order_id = 3
+
+    A resposta (204 No Content)
 
 
 #### 🦫 Dbeaver | 🐘 PostgreSQL
@@ -488,32 +774,27 @@ Para visualizar as as tabelas no banco de dados no `PostgreSQL`, poderá usar a 
 
 Para facilitar a execução e o desenvolvimento da API REST, utilizamos o Docker para criar um ambiente isolado e consistente. Siga os passos abaixo para colocar a API para rodar em um contêiner:
 
-1. Configurando o `.env`:
 
-    Altere a variável `POSTGRES_HOST` de `localhost` para `db`.
-
-2. Iniciando os Contêineres:
+1. Iniciando os Contêineres:
 
     ```bash
     docker compose up --build
     ```
-3. Aplicando as Migrações:
+2. Aplicando as Migrações:
 
     Após iniciar os contêineres, execute o seguinte comando para aplicar as migrações do banco de dados PostgreSQL:
 
     ```bash
     docker compose exec app proetry run alembic upgrade head
     ```
-
-5. Iniciando o Servidor de Desenvolvimento:
+3. Iniciando o Servidor de Desenvolvimento:
 
     Inicie o servidor de desenvolvimento do Django com o seguinte comando:
 
     ```bash
     docker compose exec app poetry run 0.0.0.0:8000
     ```
-
-6. Outros Comandos Úteis:
+4. Outros Comandos Úteis:
     
     Para rodar o Script:
     ```bash
@@ -534,3 +815,25 @@ Para facilitar a execução e o desenvolvimento da API REST, utilizamos o Docker
     ```bash
     docker compose down
     ```
+
+#### 🧪 Teste Unitário 
+
+🚨 Criação ou Manutenção
+
+- Pytest
+```python
+pytest
+```
+- Coverage
+ 1. Executar o comando. 
+    ```python
+    covarage 
+    ```
+ 2. Executar o comando para gerar o arquivo de cobertura.
+    ```python
+    covarage html
+    ```
+
+
+## Licença
+[MIT License](LICENSE)
