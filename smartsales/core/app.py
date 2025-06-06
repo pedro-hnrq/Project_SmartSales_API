@@ -12,6 +12,7 @@ from smartsales.routers.auth_router import router as auth_router
 from smartsales.routers.clients_router import router as clients_router
 from smartsales.routers.orders_router import router as orders_router
 from smartsales.routers.products_router import router as products_router
+from smartsales.routers.search_router import router as search_router
 
 # define o scheme de Bearer (JWT) para o OpenAPI
 bearer_scheme = HTTPBearer(bearerFormat='JWT')
@@ -26,9 +27,11 @@ app.mount('/static', StaticFiles(directory='smartsales/static'), name='static')
 
 # inclui seus routers normalmente
 app.include_router(auth_router, prefix='/api')
+app.include_router(search_router, prefix='/api')
 app.include_router(clients_router, prefix='/api')
 app.include_router(products_router, prefix='/api')
 app.include_router(orders_router, prefix='/api')
+
 
 
 @app.get('/', status_code=HTTPStatus.OK)
