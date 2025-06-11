@@ -239,21 +239,23 @@ Necessita está autenticado para acessar os endpoints. Pois o retorno da respost
 
     Endpoint `GET /api/search/`
     
-    Params `?q="Quais campos são obrigatórios ao criar um pedido?"`
+    Params `?q="Traga o nome e cpf de todos os clientes cadastrados"&database=true`
 
     | **Key**   | **Value** | **Discription** |  
     |------------|-----------|------------------|
-    | q     |  Quais campos são obrigatórios ao criar um pedido? | Pergunta que deseja obter |
+    | q     |  Traga o nome e cpf de todos os clientes cadastrados | Pergunta que deseja obter |
+    | database     |  true/false | Utilizar as informações do banco de dados |
     
    
     Resposta (200 OK)
     ````
     {
-    "id": 1,
-    "query": "Quais campos são obrigatórios ao criar um pedido?",
-    "response": "Ao criar um pedido, os campos obrigatórios são:\n\n1. client_id (id do cliente que fez o pedido)\n2. total_value (valor total do pedido)\n3. status (status do pedido, que inicialmente deve ser \"pending\")\n4. owner_id (id do usuário que criou o pedido)\n\nAlém disso, é necessário criar uma lista de OrderItem (itens do pedido) com os seguintes campos obrigatórios para cada item:\n1. product_id (id do produto)\n2. quantity (quantidade do produto)\n3. unit_price (preço unitário do produto)\n4. total_price (preço total do item)\n\nEsses campos são necessários para criar um pedido válido no sistema SmartSales.",
-    "owner_id": 42,
-    "created_at": "2025-06-06T20:15:00.123456"
+        "query": "Traga o nome e cpf de todos os clientes cadastrados",
+        "database": true,
+        "id": 2,
+        "response": "**Análise da Consulta SQL**\n\nA consulta SQL fornecida é:\n```sql\nSELECT \"name\", \"cpf\" FROM clients LIMIT 5;\n```\nEssa consulta tem como objetivo trazer o nome e o CPF de todos os clientes cadastrados na tabela `clients`. No entanto, há um detalhe importante a considerar: a cláusula `LIMIT 5`.\n\n**O que significa a cláusula LIMIT?**\n\nA cláusula `LIMIT` é usada para limitar o número de linhas retornadas pela consulta. Nesse caso, `LIMIT 5` significa que a consulta retornará apenas as 5 primeiras linhas da tabela `clients`, e não todos os clientes cadastrados.\n\n**Resultados**\n\nOs resultados da consulta são:\n```markdown\n('Jonas Brother', '23228592065')\n('Carla Ruy', '46036111029')\n('Joaquim Andre', '11792319029')\n```\nObserve que a consulta retornou apenas 3 linhas, e não 5. Isso pode ocorrer por várias razões, como:\n\n* A tabela `clients` tem menos de 5 linhas.\n* A consulta foi interrompida antes de retornar todas as 5 linhas.\n* Há um erro na consulta ou na tabela.\n\n**Conclusão**\n\nEm resumo, a consulta SQL fornecida não traz o nome e o CPF de todos os clientes cadastrados, mas sim apenas as 5 primeiras linhas da tabela `clients`. Se você deseja trazer todos os clientes, é necessário remover a cláusula `LIMIT 5` da consulta:\n```sql\nSELECT \"name\", \"cpf\" FROM clients;\n```\nEssa consulta retornará todos os clientes cadastrados na tabela `clients`.",
+        "owner_id": 2,
+        "created_at": "2025-06-11T19:23:21.049999"
     }
     
     ```

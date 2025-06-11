@@ -14,12 +14,9 @@ class Search:
     id: Mapped[int] = mapped_column(primary_key=True, init=False)
     query: Mapped[str] = mapped_column(String(255), nullable=False)
     response: Mapped[str] = mapped_column(Text, nullable=False)
-    owner_id: Mapped[int | None] = mapped_column(
-        ForeignKey('auth.id'), nullable=True
-    )
-    owner: Mapped[Auth | None] = relationship(
-        'Auth', init=False, lazy='joined'
-    )
+    database: Mapped[bool]
+    owner_id: Mapped[int] = mapped_column(ForeignKey('auth.id'), nullable=True)
+    owner: Mapped[Auth] = relationship('Auth', init=False, lazy='joined')
 
     created_at: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now()

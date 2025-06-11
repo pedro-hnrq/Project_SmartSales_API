@@ -33,7 +33,6 @@ app.include_router(products_router, prefix='/api')
 app.include_router(orders_router, prefix='/api')
 
 
-
 @app.get('/', status_code=HTTPStatus.OK)
 def read_root():
     return {'message': 'Olá Mundo!'}

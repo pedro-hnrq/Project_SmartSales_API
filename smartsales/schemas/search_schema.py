@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Any, Optional
 
 from pydantic import BaseModel
 
 
 class SearchBase(BaseModel):
     query: str
+    database: bool = False
 
 
 class SearchCreate(SearchBase):
@@ -15,7 +15,7 @@ class SearchCreate(SearchBase):
 class SearchOut(SearchBase):
     id: int
     response: str
-    owner_id: int | None
+    owner_id: int
     created_at: datetime
 
     class Config:

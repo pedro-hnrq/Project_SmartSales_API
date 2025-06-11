@@ -1,5 +1,11 @@
+import re
+
 from fastapi import Depends, HTTPException, Query, status
+from langchain.chains import create_sql_query_chain
+from langchain.prompts import ChatPromptTemplate
+from langchain_community.utilities import SQLDatabase
 from langchain_groq import ChatGroq
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from smartsales.core.database import get_session
@@ -79,9 +85,33 @@ Pergunta do usuário: {query}
 """  # noqa: E501
 
 
-async def search_query(
+def extract_sql_query(generated_text: str) -> str:
+    """Extrai a consulta SQL do texto gerado pelo LLM"""
+    # Tenta encontrar blocos de código SQL
+    sql_match = re.search(r'```sql(.*?)```', generated_text, re.DOTALL)
+    if sql_match:
+        return sql_match.group(1).strip()
+
+    # Tenta encontrar comandos SQL simples
+    sql_match = re.search(
+        r'(SELECT.*?;)', generated_text, re.DOTALL | re.IGNORECASE
+    )
+    if sql_match:
+        return sql_match.group(1).strip()
+
+    return generated_text.strip()
+
+
+def is_valid_sql(query: str) -> bool:
+    return query.lower().strip().startswith(('select', 'with'))
+
+
+async def search_query(  # noqa: PLR0914
     q: str = Query(
         ..., min_length=3, max_length=255, description='Texto de busca'
+    ),
+    database: bool = Query(
+        False, description='Realizar consulta direta no banco de dados'
     ),
     current_user: UserInfo = Depends(get_current_user),
     db: Session = Depends(get_session),
@@ -95,64 +125,111 @@ async def search_query(
     5) Salva a pesquisa no banco (query + resposta + owner_id).
     6) Retorna SearchOut (id, query, response, owner_id, created_at).
     """
-    # 1) Montar o “system prompt” completo
-    system_message = BUSINESS_RULES_TEMPLATE.format(query=q)
+    # 1) Se database=True, usar fluxo de consulta direta ao banco
+    if database:
+        # Verificar se pacotes necessários estão instalados
+        if not all([SQLDatabase, create_sql_query_chain, ChatPromptTemplate]):
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail='Requer instalação de langchain e langchain-community',
+            )
 
-    try:
-        # 2) Instanciar ChatGroq
-        chat = ChatGroq(
-            model='llama-3.3-70b-versatile',
-            api_key=settings.GROQ_API_KEY,
-            # temperatura baixa para respostas mais determinísticas
-            temperature=0.2,
-            max_retries=2,
-        )
+        try:
+            # Configurar conexão com o banco
+            engine = db.get_bind()
+            sql_db = SQLDatabase(engine)
 
-        # 3) Enviar “system” + “user” messages
-        messages = [
-            {'role': 'system', 'content': system_message},
-            {'role': 'user', 'content': q},
-        ]
-        # Use invoke() em vez de __call__() para não receber warnings
-        llm_response = chat.invoke(messages)
+            # Gerar consulta SQL natural language
+            llm_sql = ChatGroq(
+                model='llama-3.3-70b-versatile',
+                api_key=settings.GROQ_API_KEY,
+                temperature=0,
+            )
+            chain = create_sql_query_chain(llm_sql, sql_db)
+            generated_text = chain.invoke({'question': q})
 
-        # 3) Extrai o texto de forma robusta
-        if hasattr(llm_response, 'content'):
-            # Quando retornar um objeto (não dict), ele terá .content
-            response_text = llm_response.content
+            # Extrair e validar a consulta SQL
+            generated_query = extract_sql_query(generated_text)
 
-        elif isinstance(llm_response, dict):
-            # Quando for dict, tentamos achar choices→message→content
+            if not is_valid_sql(generated_query):
+                raise ValueError(
+                    f'Consulta SQL inválida gerada: {generated_query}'
+                )
+
+            # Executar consulta SQL com transação segura
             try:
-                response_text = llm_response['choices'][0]['message'][
-                    'content'
-                ]  # noqa: E501
-            except (KeyError, IndexError, TypeError):
-                response_text = str(llm_response)
+                result = db.execute(text(generated_query)).fetchall()
+                result_str = '\n'.join(str(row) for row in result)
+            except Exception as e:
+                db.rollback()  # Importante para limpar transações abortadas
+                raise RuntimeError(
+                    f'Erro na execução da consulta: {str(e)}'
+                ) from e
 
-        else:
-            # Qualquer outro formato, cai aqui
-            response_text = str(llm_response)
+            # Interpretar resultados com LLM
+            prompt_template = ChatPromptTemplate.from_messages([
+                (
+                    'system',
+                    'Você é um especialista em SQL. Explique os resultados:',
+                ),
+                (
+                    'human',
+                    'Pergunta: {question}\nConsulta: {query}\nResultados:\n{result}',  # noqa: E501
+                ),
+            ])
 
-        print(f'RESPOSTA CHAT Result: {llm_response} ')
+            llm_final = ChatGroq(
+                model='llama-3.3-70b-versatile',
+                api_key=settings.GROQ_API_KEY,
+                temperature=0.2,
+            )
+            print(f'RESPOSTA Consultads no SQL:\n {generated_query}\n')
+            print(f'RESPOSTA DO DB:\n {result_str}\n')
 
-        print(f'RESPOSTA CHAT LLM TEXT: {response_text} ')
+            chain_final = prompt_template | llm_final
+            response = chain_final.invoke({
+                'question': q,
+                'query': generated_query,
+                'result': result_str,
+            })
 
-        # 4) Salvar no banco
-        search_in = SearchCreate(query=q)
-        owner_id = current_user.id
+            response_text = response.content
 
-        saved = SearchService.create_search(
-            db=db,
-            search_in=search_in,
-            response=response_text,
-            owner_id=owner_id,
-        )
+        except Exception as e:
+            response_text = f'Erro na consulta ao banco: {str(e)}'
+            db.rollback()  # Garante limpeza da transação em caso de erro
 
-        return saved
+    # 2) Fluxo padrão (sem database=true)
+    else:
+        system_message = BUSINESS_RULES_TEMPLATE.format(query=q)
+        try:
+            chat = ChatGroq(
+                model='llama-3.3-70b-versatile',
+                api_key=settings.GROQ_API_KEY,
+                temperature=0.2,
+            )
+            messages = [
+                {'role': 'system', 'content': system_message},
+                {'role': 'user', 'content': q},
+            ]
+            response = chat.invoke(messages)
+            response_text = response.content
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'Erro ao processar busca: {e}',
-        )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f'Erro ao processar busca: {e}',
+            )
+
+    print(f'REPOSTA TEXTO IA: \n{response_text}')
+    # Salvar no banco e retornar
+    search_in = SearchCreate(query=q, database=database)
+    owner_id = current_user.id if current_user else None
+
+    saved = SearchService.create_search(
+        db=db,
+        search_in=search_in,
+        response=response_text,
+        owner_id=owner_id,
+    )
+    return saved
