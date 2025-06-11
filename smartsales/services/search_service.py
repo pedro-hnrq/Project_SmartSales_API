@@ -18,7 +18,10 @@ class SearchService:
         2) Retorna a instância serializada como SearchOut.
         """
         new_search = Search(
-            query=search_in.query, response=response, owner_id=owner_id
+            query=search_in.query,
+            database=search_in.database,
+            response=response,
+            owner_id=owner_id,
         )
         db.add(new_search)
         db.commit()
